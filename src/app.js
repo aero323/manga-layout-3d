@@ -905,7 +905,7 @@ function nextMannequinName() {
   return 'A' + (state.objects.length + 1);
 }
 
-function makeSpec(type, position) {
+function makeSpec(type, position, pose) {
   const isMan = MANNEQUIN_TYPES.includes(type);
   const spec = {
     id: uid(isMan ? 'm' : 'o'),
@@ -915,7 +915,7 @@ function makeSpec(type, position) {
   };
   if (isMan) {
     spec.name = nextMannequinName();
-    spec.pose = 'stand';
+    spec.pose = pose || 'stand';
     spec.heightCm = DEFAULT_HEIGHT[type];
   } else {
     spec.nameKey = `object.${type}`;
@@ -947,7 +947,7 @@ function addFromLibrary(type, position) {
   if (!Number.isFinite(px)) px = orbit.target.x;
   if (!Number.isFinite(pz)) pz = orbit.target.z;
   if (!Number.isFinite(py) || py < 0) py = 0;
-  const spec = makeSpec(type, [snapVal(px), py, snapVal(pz)]);
+  const spec = makeSpec(type, [snapVal(px), py, snapVal(pz)], libraryPose);
   if (MANNEQUIN_TYPES.includes(type)) {
     const dx = camera.position.x - spec.position[0], dz = camera.position.z - spec.position[2];
     spec.rotation = [0, round1(deg(Math.atan2(dx, dz))), 0];
@@ -1106,6 +1106,23 @@ function updateInspectorValues() {
 }
 
 /* ============ 左侧素材栏 ============ */
+// 「人物」区：类型按钮 + 新建姿势选择器（站 / 坐 / 走 / 指 / 躺，与属性面板一致）
+let libraryPose = 'stand';
+function mannequinBlock() {
+  const chips = POSES.map((p) => h('button', {
+    class: 'chip' + (libraryPose === p ? ' active' : ''),
+    onclick: (ev) => {
+      libraryPose = p;
+      for (const el of ev.currentTarget.parentElement.children) el.classList.toggle('active', el === ev.currentTarget);
+    },
+  }, t('pose.' + p)));
+  return h('section', { class: 'pblock' },
+    h('h2', { class: 'pblock-title' }, t('library.mannequins')),
+    h('div', { class: 'lib-grid cols-3' }, ...TYPE_GROUPS.mannequins.map(libButton)),
+    h('div', { class: 'field-label' }, t('library.poseForNew')),
+    h('div', { class: 'grid-btns', style: 'margin:8px 0 0' }, ...chips),
+  );
+}
 function libButton(type) {
   const btn = h('button', {
     class: 'lib-btn', draggable: 'true', title: t('library.hint'),
@@ -1137,7 +1154,7 @@ function renderLibrary() {
         h('button', { class: 'chip' + (state.tool === 'scale' ? ' active' : ''), id: 'toolScale', onclick: () => setTool('scale') }, t('tool.scale')),
       ),
     ),
-    libBlock('library.mannequins', TYPE_GROUPS.mannequins, 3),
+    mannequinBlock(),
     libBlock('library.shapes', TYPE_GROUPS.shapes, 2),
     libBlock('library.furniture', TYPE_GROUPS.furniture, 2),
     libBlock('library.fixtures', TYPE_GROUPS.fixtures, 2),

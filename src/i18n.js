@@ -71,6 +71,7 @@ export const STRINGS = {
     'export.noFrame': '请先保存至少一个画面。',
 
     'library.mannequins': '人物（人偶）',
+    'library.poseForNew': '新加人偶的姿势',
     'library.shapes': '基本形状',
     'library.furniture': '家具',
     'library.fixtures': '家电 · 设备',
@@ -468,6 +469,7 @@ export const STRINGS = {
     'export.noFrame': '先にカットを1つ保存してください。',
 
     'library.mannequins': '人物（フィギュア）',
+    'library.poseForNew': '追加時のポーズ',
     'library.shapes': '基本形状',
     'library.furniture': '家具',
     'library.fixtures': '家電・設備',

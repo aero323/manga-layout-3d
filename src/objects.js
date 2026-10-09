@@ -420,7 +420,13 @@ export function buildMannequin(type, pose = 'stand', heightCm, name = 'A') {
     legGroups.L.hip.position.y -= p.spineDrop;
     legGroups.R.hip.position.y -= p.spineDrop;
   }
-  if (p.rootRotX) body.rotation.x = deg(p.rootRotX);
+  if (p.rootRotX) {
+    body.rotation.x = deg(p.rootRotX);
+    // 整体旋转的姿势（如躺）：抬高身体，让旋转后的最低点贴地，避免半埋进地面
+    body.updateWorldMatrix(false, true);
+    const rb = new THREE.Box3().setFromObject(body);
+    body.position.y -= rb.min.y;
+  }
 
   // 身体总高（body 本地坐标 = 绝对米数，用于换算身高比例）
   const spineY = hipY + 0.10;

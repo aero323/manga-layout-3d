@@ -6,3 +6,6 @@ node_modules/
 *.log
 .idea/
 .vscode/
+
+# Playwright CLI 测试产物
+.playwright-cli/
