@@ -25,6 +25,8 @@ export const STRINGS = {
 
     'camera.title': '相机',
     'camera.lens': '焦距',
+    'camera.lockSubject': '锁定主体大小',
+    'camera.lockSubjectTip': '打开后，换焦段会自动前后移动机位，保持主体在画面里的大小：24mm 凑近、85mm 后退，前后景比例（透视）随之改变',
     'camera.roll': '倾斜',
     'camera.presets': '目线 / 角度预设',
     'camera.standing': '站立 150cm',
@@ -177,6 +179,8 @@ export const STRINGS = {
     'toast.frameDeleted': '画面已删除',
     'toast.focused': '相机已对准选中对象',
     'toast.lensFrame': '已套用画面「{name}」的相机',
+    'toast.lockSubjectOn': '已开启「锁定主体大小」：换焦段会前后移动机位',
+    'toast.lockSubjectOff': '已关闭「锁定主体大小」：换焦段只改变取景范围，机位不动',
     'toast.needSelection': '请先选中一个对象',
 
     'tool.title': '工具',
@@ -221,7 +225,7 @@ export const STRINGS = {
     'help.flow5': '⑤ 在「导出 PNG」里选择尺寸，导出底稿（可分层、可透明底）',
     'help.keysTitle': '快捷键',
     'help.insightTitle': '★ 经验（来自实测）',
-    'help.insight1': '比「位置」更重要的是「镜头」。同一个房间，24mm 显得宽敞夸张，50mm 更自然。能一键切换正是 3D 的优势。',
+    'help.insight1': '焦段只决定「取景范围」，透视由机位决定。想夸张就凑近用广角、想压缩就后退用长焦——打开相机面板里的「锁定主体大小」，换焦段会自动帮你前后移动。',
     'help.insight2': '目线高度决定画面是否自然：坐姿眼睛约 110cm、站立约 150cm。把相机对到人物的眼睛高度，构图立刻像漫画。',
     'help.insight3': '外观选「线稿（柔和）」并配合白底，就能直接当描线底稿，贴到 Clip Studio 的草稿层上使用。',
     'help.insight4': '尺寸全部按真实厘米处理，家具与人物比例始终正确；高さ吸附还能把东西直接放到桌面上。',
@@ -423,6 +427,8 @@ export const STRINGS = {
 
     'camera.title': 'カメラ',
     'camera.lens': 'レンズ',
+    'camera.lockSubject': '被写体サイズを固定',
+    'camera.lockSubjectTip': 'オンにするとレンズ変更時にカメラが前後し、被写体の画面内サイズを保ちます（24mmは寄り、85mmは下がる）＝前後の大小比＝パースが変わります',
     'camera.roll': '傾け',
     'camera.presets': '目線 / アングル',
     'camera.standing': '立ち 150cm',
@@ -575,6 +581,8 @@ export const STRINGS = {
     'toast.frameDeleted': 'カットを削除しました',
     'toast.focused': 'カメラを選択物に向けました',
     'toast.lensFrame': 'カット「{name}」のカメラを適用しました',
+    'toast.lockSubjectOn': '「被写体サイズを固定」オン：レンズ変更でカメラが前後します',
+    'toast.lockSubjectOff': '「被写体サイズを固定」オフ：レンズ変更は画角のみ、カメラは動きません',
     'toast.needSelection': '先にオブジェクトを選択してください',
 
     'tool.title': 'ツール',
@@ -604,7 +612,7 @@ export const STRINGS = {
     'help.flow5': '⑤ 「PNG 書き出し」でサイズを選んで下描きを出力（レイヤー分け・透明背景も可）',
     'help.keysTitle': 'ショートカット',
     'help.insightTitle': '★ コツ（実際に試した結果）',
-    'help.insight1': '「位置」より「レンズ」が効きます。同じ部屋でも 24mm なら広く誇張され、50mm なら自然に見えます。ワンクリックで切り替えられるのが 3D の強みです。',
+    'help.insight1': 'レンズが決めるのは画角で、パースを決めるのはカメラ位置です。広角で誇張するなら寄る、望遠で圧縮するなら下がる。カメラパネルの「被写体サイズを固定」をオンにすると自動で前後します。',
     'help.insight2': '目線の高さで自然さが決まります。座っていれば約 110cm、立っていれば約 150cm。カメラをその高さに合わせるだけで自然なアイレベルになります。',
     'help.insight3': '見た目を「線画（ソフト）」にして白背景にすれば、そのまま下描きとして使えます。クリスタの下描きレイヤーに貼ってトレースできます。',
     'help.insight4': '寸法はすべて実寸（cm）で扱うので、家具と人物の比率は常に正しいままです。高さ吸着で机の上にもそのまま置けます。',

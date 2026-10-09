@@ -71,6 +71,7 @@ const state = {
   view: { pos: [34, 8, 72], target: [0, 8, 16] },
   lens: 30,
   roll: 0,
+  lockSubject: false,   // 换焦段时是否自动前后移动机位，保持主体在画面里的大小
   aspect: [16, 9],
   grid: 5,
   rotateSnap: 90,
@@ -558,11 +559,33 @@ function aspectLabel(aspect = state.aspect) {
   const found = ASPECTS.find((x) => Math.abs(x.a[0] / x.a[1] - aspect[0] / aspect[1]) < 1e-4);
   return found ? t('aspect.' + found.id) : `${aspect[0]}:${aspect[1]}`;
 }
+function lensSubjectCenter() {
+  const entry = state.selectedId ? objMap.get(state.selectedId) : null;
+  if (entry) return boxOf(entry.object3D).getCenter(new THREE.Vector3());
+  return orbit.target.clone();   // 没选中物体时以注视点为准
+}
+// 「锁定主体大小」：换焦段时把整台相机（机位 + 注视点）以主体为中心按 k = 新焦段 / 旧焦段 缩放。
+// 主体到镜头的角度不变 → 主体在画面里的大小不变，变的是拍摄距离 —— 这才是「24mm 夸张 / 85mm 压平」的真正来源。
+function dollyForLens(k) {
+  if (!Number.isFinite(k) || Math.abs(k - 1) < 1e-6) return;
+  const c = lensSubjectCenter();
+  const distNow = camera.position.distanceTo(c);
+  if (!(distNow > 1e-4)) return;
+  const s = clamp(distNow * k, 0.35, 160) / distNow;
+  camera.position.sub(c).multiplyScalar(s).add(c);
+  orbit.target.sub(c).multiplyScalar(s).add(c);
+  orbit.update();
+}
 function setLens(v, silent = false) {
-  state.lens = clamp(Math.round(v), 12, 200);
+  const next = clamp(Math.round(v), 12, 200);
+  const prev = state.lens;
+  state.lens = next;
   $('#lensRange').value = String(state.lens);
   $('#lensOut').value = state.lens + 'mm';
   for (const b of $$('#lensPresets .chip')) b.classList.toggle('active', Number(b.dataset.lens) === state.lens);
+  if (!silent && state.lockSubject && next !== prev) dollyForLens(next / prev);
+  updateCameraFov();
+  updateOverlay();
   if (!silent) markFrameDirty();
 }
 function setAspect(a) {
@@ -1721,6 +1744,7 @@ function syncAllUI() {
   $('#lensOut').value = state.lens + 'mm';
   $('#rollRange').value = String(state.roll);
   $('#rollOut').value = Math.round(state.roll) + '°';
+  $('#cbLockSubject').checked = state.lockSubject;
   $('#exportWidth').value = String(state.exportWidth);
   $('#cbThirds').checked = state.show.thirds;
   $('#cbPerspective').checked = state.show.perspective;
@@ -1750,7 +1774,7 @@ function syncAllUI() {
   savePrefs();
 }
 function savePrefs() {
-  lsSet(LS.prefs, { show: state.show, look: state.look, lang: state.lang, exportWidth: state.exportWidth });
+  lsSet(LS.prefs, { show: state.show, look: state.look, lang: state.lang, exportWidth: state.exportWidth, lockSubject: state.lockSubject });
 }
 
 /* ============ 绑定 UI ============ */
@@ -1771,7 +1795,12 @@ function bindUI() {
   $('#lookSelect').addEventListener('change', (e) => {
     commit(() => { state.look = e.target.value; applyLook(); savePrefs(); });
   });
-  $('#lensRange').addEventListener('input', (e) => { setLens(Number(e.target.value)); updateCameraFov(); });
+  $('#lensRange').addEventListener('input', (e) => setLens(Number(e.target.value)));
+  $('#cbLockSubject').addEventListener('change', (e) => {
+    state.lockSubject = e.target.checked;
+    savePrefs();
+    toast(t(state.lockSubject ? 'toast.lockSubjectOn' : 'toast.lockSubjectOff'));
+  });
   $('#rollRange').addEventListener('input', (e) => { setRoll(Number(e.target.value)); });
   $('#saveShotBtn').addEventListener('click', saveShot);
   $('#updateShotBtn').addEventListener('click', updateShot);
@@ -1919,7 +1948,7 @@ function animate() {
 }
 
 // 调试钩子（自动化测试 / 控制台调试用）
-window.MangaLayout = { THREE, scene, camera, renderer, orbit, transform, state, objMap, selBox, boxOf, undo, redo, serialize, restore, renderToCanvas, exportFrameSpec, applyLook, applySnapDuringDrag, setTool, nameTool, bubbleTool, setMode };
+window.MangaLayout = { THREE, scene, camera, renderer, orbit, transform, state, objMap, selBox, boxOf, undo, redo, serialize, restore, renderToCanvas, exportFrameSpec, applyLook, applySnapDuringDrag, setTool, setLens, setAspect, nameTool, bubbleTool, setMode };
 
 function boot() {
   applyStaticText();
@@ -1941,6 +1970,7 @@ function boot() {
     if (prefs.show) state.show = { ...state.show, ...prefs.show };
     if (LOOK_OPTIONS.includes(prefs.look)) state.look = prefs.look;
     if (prefs.exportWidth) state.exportWidth = prefs.exportWidth;
+    if (typeof prefs.lockSubject === 'boolean') state.lockSubject = prefs.lockSubject;
   }
   const saved = lsGet(LS.auto, null);
   if (saved && saved.stageObjects) {
