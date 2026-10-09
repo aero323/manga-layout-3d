@@ -1,0 +1,8 @@
+# 仅用于首次获取 Three.js，运行时不使用（Three.js 已随包在 vendor/three）
+node_modules/
+
+# 本机/编辑器产物
+.DS_Store
+*.log
+.idea/
+.vscode/

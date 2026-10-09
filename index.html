@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>漫画分镜 3D / マンガ レイアウト 3D</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./styles.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/three.module.js",
+    "three/addons/": "./vendor/three/addons/"
+  }
+}
+</script>
+</head>
+<body data-mode="3d">
+
+<header class="toolbar">
+  <div class="brand">
+    <span class="brand-mark">ML</span>
+    <span class="brand-text">
+      <b data-i18n="app.title">漫画分镜 3D</b>
+      <small data-i18n="app.subtitle">Storyboard · Panels · Balloons</small>
+    </span>
+  </div>
+
+  <div class="tb-fields only-3d">
+    <label class="field">
+      <span data-i18n="toolbar.stage">舞台</span>
+      <select id="stageSelect" class="select"></select>
+    </label>
+    <label class="field">
+      <span data-i18n="toolbar.grid">网格</span>
+      <select id="gridSelect" class="select"></select>
+    </label>
+    <label class="field">
+      <span data-i18n="toolbar.rotate">旋转</span>
+      <select id="rotateSelect" class="select"></select>
+    </label>
+    <label class="field">
+      <span data-i18n="toolbar.look">外观</span>
+      <select id="lookSelect" class="select"></select>
+    </label>
+  </div>
+
+  <div class="tb-actions">
+    <button id="undoBtn" class="btn" data-i18n-title="toolbar.undoTitle">
+      <span class="ico">↶</span><span data-i18n="toolbar.undo">撤销</span>
+    </button>
+    <button id="redoBtn" class="btn" data-i18n-title="toolbar.redoTitle">
+      <span class="ico">↷</span><span data-i18n="toolbar.redo">重做</span>
+    </button>
+    <span class="tb-sep"></span>
+    <button id="newBtn" class="btn" data-i18n="toolbar.new">新建</button>
+    <button id="openBtn" class="btn" data-i18n="toolbar.open">打开文件</button>
+    <button id="saveBtn" class="btn" data-i18n="toolbar.save">保存文件</button>
+  </div>
+
+  <div class="tb-right">
+    <div class="seg" id="langSeg">
+      <button data-lang="zh" class="active">中文</button>
+      <button data-lang="ja">日本語</button>
+    </div>
+    <button id="leftToggle" class="btn icon" data-i18n-title="toolbar.toggleLeft">◧</button>
+    <button id="rightToggle" class="btn icon" data-i18n-title="toolbar.toggleRight">◨</button>
+    <button id="helpBtn" class="btn icon" data-i18n-title="toolbar.help">?</button>
+  </div>
+</header>
+
+<main class="workspace">
+
+  <nav id="rail" class="rail" data-i18n-title="mode.menu">
+    <button id="railToggle" class="rail-toggle" data-i18n-title="mode.menu">☰</button>
+    <button class="rail-item" data-mode="3d" data-i18n-title="mode.layoutTitle">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M12 2.8 20.5 7v10L12 21.2 3.5 17V7z"/><path d="M3.5 7 12 11.4 20.5 7M12 11.4v9.8"/>
+      </svg>
+      <span data-i18n="mode.layout">3D 分镜</span>
+    </button>
+    <button class="rail-item" data-mode="name" data-i18n-title="mode.nameTitle">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+        <rect x="3.6" y="3" width="16.8" height="18" rx="1.6"/><path d="M3.6 11.2h8.2M11.8 3v18M11.8 15.4h8.6"/>
+      </svg>
+      <span data-i18n="mode.name">漫画分格</span>
+    </button>
+    <button class="rail-item" data-mode="bubble" data-i18n-title="mode.bubbleTitle">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M12 4.2c4.8 0 8.4 3 8.4 6.7 0 3.8-3.6 6.8-8.4 6.8-.8 0-1.6-.1-2.3-.3-1.4 1.2-3.3 1.9-5.5 2.1.9-1.1 1.5-2.2 1.7-3.3-1.4-1.2-2.3-3-2.3-5.3 0-3.7 3.6-6.7 8.4-6.7z"/>
+        <path d="M9.4 10.9h5.2M9.4 13.7h5.2" stroke-width="1.2"/>
+      </svg>
+      <span data-i18n="mode.bubble">对话气泡</span>
+    </button>
+    <div class="rail-sp"></div>
+    <button class="rail-item" id="railHelp" data-i18n-title="toolbar.help">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+        <circle cx="12" cy="12" r="8.6"/><path d="M9.4 9.3a2.7 2.7 0 1 1 3.6 2.5c-.7.3-1 .9-1 1.6v.4"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/>
+      </svg>
+      <span data-i18n="rail.help">帮助</span>
+    </button>
+  </nav>
+
+  <aside id="leftPanel" class="panel panel-left">
+    <div id="library" class="only-3d"></div>
+
+    <div class="only-namebubble">
+      <section class="pblock">
+        <h2 class="pblock-title"><span data-i18n="name.pages">页面</span>
+          <button class="mini" id="nameAddPageTop" data-i18n="name.addPageMini">＋ 添加</button>
+        </h2>
+        <div id="namePageList" class="page-list"></div>
+        <p class="note" data-i18n="bubble.pagesNote">「漫画分格」和「对话气泡」共用这些页面：先分格、放好画面，再来加气泡。</p>
+      </section>
+    </div>
+
+    <div id="bubbleLeft" class="only-bubble">
+      <section class="pblock">
+        <h2 class="pblock-title"><span data-i18n="bubble.palette">对话气泡</span></h2>
+        <div id="bubblePalette" class="bb-palette"></div>
+        <p class="note" data-i18n="bubble.paletteNote">点一下就能加到当前页面中央；可以拖动移动，拖右下角手柄缩放。</p>
+      </section>
+
+      <section class="pblock">
+        <h2 class="pblock-title"><span data-i18n="bubble.textSection">文字</span><span class="mini" id="bubbleTextCount"></span></h2>
+        <p class="note" data-i18n="bubble.textNote">每个气泡里的文字默认「竖排・从右到左・居中」。也可以只用文字不放气泡。双击页面上的气泡即可直接输入文字。</p>
+        <button id="bubbleTextOpen" class="btn block" style="margin-top:8px" data-i18n="bubble.textAll">统一编辑所有页面文字</button>
+      </section>
+    </div>
+
+    <div id="nameLeft" class="only-name">
+      <section class="pblock">
+        <h2 class="pblock-title"><span data-i18n="name.frames">分镜画面（3D）</span><span class="mini" id="nameFrameCount"></span></h2>
+        <div id="namePalette" class="frame-palette"></div>
+        <p class="note" data-i18n="name.framesHint">拖到页面的分格里，或先点画面再点分格。</p>
+        <div class="row" style="margin-top:8px">
+          <button id="nameAutoFill" class="btn block" data-i18n="name.autoFill">自动填入本页</button>
+          <button id="nameAutoFillAll" class="btn block" data-i18n="name.autoFillAll">自动填入全部页</button>
+        </div>
+      </section>
+
+      <section class="pblock">
+        <h2 class="pblock-title" data-i18n="name.settings">页面设置</h2>
+        <label class="slider-row wide"><span data-i18n="name.pageName">页面名称</span>
+          <input id="namePageName" class="input" type="text" style="flex:1"></label>
+        <label class="slider-row wide"><span data-i18n="name.pageSize">页面尺寸</span>
+          <select id="namePageSize" class="select" style="flex:1"></select></label>
+        <label class="slider-row wide"><span data-i18n="name.margin">内枠余白</span>
+          <input id="nameMargin" type="range" min="0" max="220" step="1"><output id="nameMarginOut"></output></label>
+        <label class="slider-row wide"><span data-i18n="name.gap">分格间隙</span>
+          <input id="nameGap" type="range" min="0" max="60" step="1"><output id="nameGapOut"></output></label>
+        <label class="slider-row wide"><span data-i18n="name.lineWidth">线条粗细</span>
+          <input id="nameLineW" type="range" min="0" max="22" step="1"><output id="nameLineWOut"></output></label>
+        <button id="nameResetPage" class="btn block dashed" style="margin-top:6px" data-i18n="name.resetPage">清空本页分格</button>
+        <p class="note" data-i18n="name.settingsNote">余白 = 内枠到纸张边缘的距离；间隙 = 相邻分格之间的白色间隔。</p>
+      </section>
+    </div>
+  </aside>
+
+  <section class="viewport-wrap only-3d">
+    <div id="viewport" class="viewport">
+      <div id="overlay" class="overlay">
+        <div id="frameRect" class="frame-rect">
+          <div class="thirds" id="thirds">
+            <i></i><i></i><i></i><i></i>
+          </div>
+          <div class="frame-badge" id="frameBadge">16:9 · 35mm</div>
+          <div class="frame-tag" id="frameTag"></div>
+        </div>
+        <svg id="guidesSvg" class="guides" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="hud">
+        <span id="hudStage" class="hud-chip"></span>
+        <span id="hudCamera" class="hud-chip"></span>
+      </div>
+      <div class="hud hud-right">
+        <span class="hud-chip hint" data-i18n="hud.hint">拖动左键环绕 · 右键平移 · 滚轮缩放 · Shift 临时取消吸附</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="nameWrap" class="viewport-wrap name-wrap only-name">
+    <div class="name-topbar">
+      <div id="nameTools" class="name-tools"></div>
+      <div class="name-nav">
+        <button id="namePrev" class="btn icon" title="◀">‹</button>
+        <span id="namePageInfo" class="name-pageinfo"></span>
+        <button id="nameNext" class="btn icon" title="▶">›</button>
+        <span class="tb-sep"></span>
+        <button id="nameAddPage" class="btn" data-i18n="name.addPage">＋ 新页面</button>
+        <button id="nameDupPage" class="btn" data-i18n="name.duplicatePage">复制页面</button>
+        <button id="nameDelPage" class="btn danger" data-i18n="name.deletePage">删除页面</button>
+      </div>
+    </div>
+    <div class="name-stage-wrap" id="nameStageWrap">
+      <div class="name-page-host">
+        <canvas id="nameCanvas"></canvas>
+      </div>
+    </div>
+    <div class="name-hud">
+      <span id="nameHud" class="hud-chip hint"></span>
+      <span id="nameEmptyHint" class="hud-chip"></span>
+    </div>
+  </section>
+
+  <section id="bubbleWrap" class="viewport-wrap name-wrap only-bubble">
+    <div class="name-topbar">
+      <div id="bubbleTools" class="name-tools"></div>
+      <div class="name-nav">
+        <button id="bubblePrev" class="btn icon" data-i18n-title="name.moveUp" title="‹">‹</button>
+        <span id="bubblePageInfo" class="name-pageinfo"></span>
+        <button id="bubbleNext" class="btn icon" data-i18n-title="name.moveDown" title="›">›</button>
+        <span class="tb-sep"></span>
+        <button id="bubbleAddPage" class="btn" data-i18n="name.addPage">＋ 新页面</button>
+        <button id="bubbleTextAll" class="btn primary" data-i18n="bubble.textAll">统一编辑所有页面文字</button>
+      </div>
+    </div>
+    <div class="name-stage-wrap" id="bubbleStageWrap">
+      <div class="name-page-host">
+        <canvas id="bubbleCanvas"></canvas>
+      </div>
+    </div>
+    <div class="name-hud">
+      <span id="bubbleHud" class="hud-chip hint"></span>
+    </div>
+  </section>
+
+  <aside id="rightPanel" class="panel panel-right">
+   <div id="right3d" class="only-3d">
+    <section class="pblock">
+      <h2 class="pblock-title" data-i18n="camera.title">相机</h2>
+      <div class="row lens-row" id="lensPresets"></div>
+      <label class="slider-row">
+        <span data-i18n="camera.lens">焦距</span>
+        <input id="lensRange" type="range" min="18" max="120" step="1" value="35">
+        <output id="lensOut">35mm</output>
+      </label>
+      <div class="grid-btns" id="eyePresets"></div>
+      <label class="slider-row">
+        <span data-i18n="camera.roll">倾斜</span>
+        <input id="rollRange" type="range" min="-30" max="30" step="1" value="0">
+        <output id="rollOut">0°</output>
+      </label>
+      <div class="row">
+        <button id="saveShotBtn" class="btn primary block" data-i18n="camera.saveAsShot">保存为画面</button>
+        <button id="updateShotBtn" class="btn block" data-i18n="camera.updateShot">更新画面</button>
+      </div>
+    </section>
+
+    <section class="pblock">
+      <h2 class="pblock-title" data-i18n="frames.title">画面（分镜格）</h2>
+      <div class="row chips" id="aspectPresets"></div>
+      <div id="frameList" class="frame-list"></div>
+      <button id="addFrameBtn" class="btn block dashed" data-i18n="camera.addFrame">＋ 添加画面</button>
+
+      <div class="mini-name">
+        <div class="mini-name-head">
+          <span data-i18n="name.miniTitle">ネーム分格</span>
+          <button class="mini" id="nameMiniOpen" data-i18n="name.openEditor">打开编辑器</button>
+        </div>
+        <div id="nameMiniWrap" class="mini-page-wrap">
+          <canvas id="nameMini" class="mini-page"></canvas>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <button id="nameMiniPrev" class="btn icon" title="◀">‹</button>
+          <span id="nameMiniLabel" class="muted" style="flex:1;text-align:center"></span>
+          <button id="nameMiniNext" class="btn icon" title="▶">›</button>
+          <button id="nameMiniAdd" class="btn icon" title="＋">＋</button>
+        </div>
+        <p class="note" data-i18n="name.miniHint">把上面的画面卡片拖进缩略页的分格里，就能直接分格排版。</p>
+      </div>
+    </section>
+
+    <section class="pblock">
+      <h2 class="pblock-title" data-i18n="display.title">显示</h2>
+      <label class="check"><input type="checkbox" id="cbThirds" checked><span data-i18n="display.thirds">三分法构图线</span></label>
+      <label class="check"><input type="checkbox" id="cbPerspective" checked><span data-i18n="display.perspective">透视线 / 消失点</span></label>
+      <label class="check"><input type="checkbox" id="cbHorizon" checked><span data-i18n="display.horizon">视平线（地平线）</span></label>
+      <label class="check"><input type="checkbox" id="cbDim" checked><span data-i18n="display.dimOutside">画面外变暗</span></label>
+      <label class="check"><input type="checkbox" id="cbOnlyMan"><span data-i18n="display.onlyMan">只显示人偶（去掉所有背景物体）</span></label>
+      <label class="check"><input type="checkbox" id="cbLabels" checked><span data-i18n="display.labels">角色名称标签</span></label>
+      <label class="check"><input type="checkbox" id="cbGrid" checked><span data-i18n="display.floorGrid">地面网格</span></label>
+      <label class="check"><input type="checkbox" id="cbNoWalls"><span data-i18n="display.noWalls">去掉墙壁遮挡</span></label>
+    </section>
+
+    <section class="pblock">
+      <h2 class="pblock-title" data-i18n="export.title">导出 PNG</h2>
+      <label class="slider-row">
+        <span data-i18n="export.size">尺寸</span>
+        <select id="exportWidth" class="select"></select>
+      </label>
+      <label class="check"><input type="checkbox" id="cbTransparent"><span data-i18n="export.transparent">背景透明</span></label>
+      <label class="check"><input type="checkbox" id="cbLayers"><span data-i18n="export.layers">同时导出「背景」「人物」分层图</span></label>
+      <button id="exportBtn" class="btn primary block" data-i18n="export.button">导出当前画面</button>
+      <p class="note" data-i18n="export.note">导出尺寸与画幅比例一致，可直接拖进 Clip Studio / Photoshop 当底稿。</p>
+    </section>
+   </div>
+
+   <div id="rightBubble" class="only-bubble">
+    <section class="pblock">
+      <h2 class="pblock-title" data-i18n="bubble.inspTitle">选中气泡</h2>
+      <div id="bubbleInspector"></div>
+    </section>
+    <section class="pblock">
+      <h2 class="pblock-title" data-i18n="bubble.exportTitle">导出（含气泡的页面）</h2>
+      <label class="slider-row wide"><span data-i18n="bubble.exportWidth">宽度</span>
+        <select id="bubbleExportWidth" class="select" style="flex:1"></select></label>
+      <button id="bubbleExportOne" class="btn block" data-i18n="name.exportCurrent">导出当前页 PNG</button>
+      <button id="bubbleExportAll" class="btn primary block" style="margin-top:6px" data-i18n="name.exportAll">导出全部页面 PNG</button>
+      <p class="note" data-i18n="bubble.exportNote">每页导出为一张 PNG（分格画面 + 气泡 + 文字），按页序命名（fukidashi_p01…）。若浏览器提示「下载多个文件」，请选择允许。</p>
+    </section>
+   </div>
+
+   <div id="rightName" class="only-name">
+    <section class="pblock">
+      <h2 class="pblock-title" data-i18n="name.panelTitle">选中分格</h2>
+      <div id="nameInspector"></div>
+    </section>
+    <section class="pblock">
+      <h2 class="pblock-title" data-i18n="name.exportTitle">导出 ネーム</h2>
+      <label class="slider-row wide"><span data-i18n="name.exportWidth">宽度</span>
+        <select id="nameExportWidth" class="select" style="flex:1"></select></label>
+      <button id="nameExportOne" class="btn block" data-i18n="name.exportCurrent">导出当前页 PNG</button>
+      <button id="nameExportAll" class="btn primary block" style="margin-top:6px" data-i18n="name.exportAll">导出全部页面 PNG</button>
+      <p class="note" data-i18n="name.exportNote">每页导出为一张 PNG，按页序命名，可直接打印成漫画ネーム。</p>
+    </section>
+   </div>
+  </aside>
+</main>
+
+<div id="fileWarn" class="file-warn">
+  <b>请用启动脚本打开 / 起動スクリプトから開いてください</b><br>
+  直接双击 index.html 无法运行（浏览器会拦截本地模块）。<br>
+  macOS：双击 <code>start.command</code>　Windows：双击 <code>start.bat</code>　或运行 <code>node server.mjs</code><br>
+  直接 index.html を開いても動きません（ローカルモジュールがブロックされます）。
+</div>
+
+<script>
+  if (location.protocol === 'file:') document.documentElement.classList.add('file-protocol');
+</script>
+
+<div id="toast" class="toast"></div>
+
+<dialog id="helpDialog" class="dialog">
+  <div class="dialog-head">
+    <h2 data-i18n="help.title">使用说明 / 快捷键</h2>
+    <button class="btn icon" data-close>✕</button>
+  </div>
+  <div class="dialog-body" id="helpBody"></div>
+</dialog>
+
+<dialog id="myStageDialog" class="dialog small">
+  <div class="dialog-head">
+    <h2 data-i18n="myStages.saveTitle">保存为我的舞台</h2>
+    <button class="btn icon" data-close>✕</button>
+  </div>
+  <div class="dialog-body">
+    <input id="myStageName" class="input" type="text">
+    <div class="row end">
+      <button class="btn" data-close data-i18n="common.cancel">取消</button>
+      <button id="myStageConfirm" class="btn primary" data-i18n="common.ok">确定</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="bubbleTextDialog" class="dialog">
+  <div class="dialog-head">
+    <h2 data-i18n="bubble.textAllTitle">统一编辑所有页面的文字</h2>
+    <button class="btn icon" data-close>✕</button>
+  </div>
+  <div class="dialog-body">
+    <div class="bb-dlg-tools">
+      <button id="bubbleAllVertical" class="btn" data-i18n="bubble.allVertical">全部改竖排</button>
+      <button id="bubbleAllHorizontal" class="btn" data-i18n="bubble.allHorizontal">全部改横排</button>
+      <label class="slider-row wide" style="margin:0;flex:1"><span data-i18n="bubble.sizeAll">统一字号</span>
+        <input id="bubbleAllSize" type="range" min="40" max="100" step="1" value="86">
+        <output id="bubbleAllSizeOut">86%</output></label>
+    </div>
+    <p class="note" data-i18n="bubble.textAllNote">这里可以一次改完所有页面上的文字：直接改下面的输入框即可，画布会同步更新。</p>
+    <div id="bubbleTextList" class="bb-text-list"></div>
+  </div>
+  <div class="dialog-foot">
+    <button id="bubbleTextCancel" class="btn" data-i18n="common.cancel">取消</button>
+    <button id="bubbleTextOk" class="btn primary" data-i18n="common.ok">确定</button>
+  </div>
+</dialog>
+
+<input id="fileInput" type="file" accept=".json,application/json" hidden>
+<script type="module" src="./src/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "three": "^0.169.0"
+  },
+  "type": "module",
+  "name": "mangalayout",
+  "version": "1.0.0",
+  "private": true
+}
